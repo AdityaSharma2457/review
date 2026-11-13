@@ -235,20 +235,28 @@ def create_app(test_config=None):
             else:
                 abort(400, description="Unknown dashboard action.")
         templates = get_db().execute(
-            """SELECT id, text, used_at FROM review_templates
-               WHERE shop_id = ? ORDER BY id DESC""",
-            (shop["id"],),
-        ).fetchall()
+    """
+    SELECT id, text, NULL AS used_at
+    FROM review_templates
+    WHERE shop_id = ?
+    ORDER BY id DESC
+    """,
+    (shop["id"],),
+).fetchall()
+
         unused_count = get_db().execute(
-            """SELECT COUNT(*) AS count FROM review_templates
-               WHERE shop_id = ? AND used_at IS NULL""",
-            (shop["id"],),
-        ).fetchone()["count"]
+    """
+    SELECT COUNT(*) AS count
+    FROM review_templates
+    WHERE shop_id = ?
+    """,
+    (shop["id"],),
+).fetchone()["count"]
         demo_url = url_for(
             "review_demo", public_token=shop["public_token"], _external=True
         )
         qr_customer_url = url_for(
-            "customer", public_token=shop["public_token"], _external=True
+            "review_demo", public_token=shop["public_token"], _external=True
         )
         qr = qrcode.make(qr_customer_url)
         buffer = BytesIO()
@@ -264,80 +272,80 @@ def create_app(test_config=None):
             qr_data=qr_data,
         )
 
+    
+
     @app.get("/demo/<public_token>")
     def review_demo(public_token):
         shop = get_db().execute(
-            "SELECT id, name FROM shops WHERE public_token = ?", (public_token,)
+            """
+            SELECT id, name, place_id, public_token
+            FROM shops
+            WHERE public_token = ?
+            """,
+            (public_token,)
         ).fetchone()
+
         if shop is None:
             abort(404)
+
         choices = get_db().execute(
-            """SELECT id, text FROM review_templates
-               WHERE shop_id = ? AND used_at IS NULL
-               ORDER BY RANDOM() LIMIT 5""",
-            (shop["id"],),
+            """
+            SELECT id, text
+            FROM review_templates
+            WHERE shop_id = ?
+            ORDER BY RANDOM()
+            LIMIT 5
+            """,
+            (shop["id"],)
         ).fetchall()
+
         return render_template(
             "review_demo.html",
             shop=shop,
             choices=choices,
-            public_token=public_token,
+            public_token=public_token
         )
+
 
     @app.post("/demo/<public_token>/select")
     def select_demo_review(public_token):
         connection = get_db()
+
         shop = connection.execute(
-            "SELECT id FROM shops WHERE public_token = ?", (public_token,)
+            """
+            SELECT id, name, place_id
+            FROM shops
+            WHERE public_token = ?
+            """,
+            (public_token,)
         ).fetchone()
+
         if shop is None:
             abort(404)
+
         template_id = request.form.get("review_id", type=int)
         rating = request.form.get("rating", type=int)
+
         if template_id is None or rating is None or not 1 <= rating <= 5:
-            abort(400, description="Choose one demo review and a rating from 1 to 5.")
+            abort(400)
 
-        connection.execute("BEGIN IMMEDIATE")
         template = connection.execute(
-            """SELECT id, text FROM review_templates
-               WHERE id = ? AND shop_id = ? AND used_at IS NULL""",
-            (template_id, shop["id"]),
+            """
+            SELECT id, text
+            FROM review_templates
+            WHERE id = ? AND shop_id = ?
+            """,
+            (template_id, shop["id"])
         ).fetchone()
-        if template is None:
-            connection.rollback()
-            flash("That demo review is no longer available. Choose another.")
-            return redirect(url_for("review_demo", public_token=public_token))
 
-        now = datetime.now(timezone.utc).isoformat()
-        updated = connection.execute(
-            "UPDATE review_templates SET used_at = ? WHERE id = ? AND used_at IS NULL",
-            (now, template_id),
-        )
-        if updated.rowcount != 1:
-            connection.rollback()
-            flash("That demo review was just used. Choose another.")
-            return redirect(url_for("review_demo", public_token=public_token))
-        cursor = connection.execute(
-            """INSERT INTO demo_reviews
-               (shop_id, template_id, public_token, review_text, rating, status, created_at)
-               VALUES (?, ?, ?, ?, ?, 'published', ?)""",
-            (
-                shop["id"],
-                template_id,
-                secrets.token_urlsafe(24),
-                template["text"],
-                rating,
-                now,
-            ),
-        )
-        connection.commit()
-        result = connection.execute(
-            "SELECT public_token FROM demo_reviews WHERE id = ?",
-            (cursor.lastrowid,),
-        ).fetchone()
-        return redirect(
-            url_for("demo_result", public_token=result["public_token"])
-        )
+        if template is None:
+            abort(404)
+
+        return  redirect(
+    url_for("google_review", public_token=public_token)
+)
+
+
 
     @app.get("/demo/result/<public_token>")
     def demo_result(public_token):
@@ -389,4 +397,4 @@ def create_app(test_config=None):
 
 
 if __name__ == "__main__":
-    create_app().run(debug=True)
+    create_app().run(host="0.0.0.0",debug=True)

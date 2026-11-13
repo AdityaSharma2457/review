@@ -42,24 +42,89 @@
 </section>
 
 <section class="template-library">
+<section class="template-library">
+
+    <div class="template-library-heading">
+        <div>
+            <p class="eyebrow">CUSTOMER EXPERIENCE</p>
+            <h2>Your Google Review Flow</h2>
+            <p class="muted">
+                Customers scan your QR code, write their own
+                feedback, copy it and continue to your Google
+                review page.
+            </p>
+        </div>
+    </div>
+
+    <div class="template-library-grid">
+
+        <div class="template-add-card">
+            <h3>Customer review page</h3>
+
+            <p>
+                This is the page customers see after scanning
+                your QR code.
+            </p>
+
+            <a
+                href="{{ customer_url }}"
+                target="_blank"
+                rel="noopener"
+                class="button secondary"
+            >
+                Preview customer page →
+            </a>
+        </div>
+
+        <div class="template-list-card">
+            <h3>Google destination</h3>
+
+            <p class="muted">
+                Your customers will be redirected to the
+                Google listing associated with your Place ID.
+            </p>
+
+            <a
+                href="{{ url_for('google_review', public_token=shop.public_token) }}"
+                target="_blank"
+                rel="noopener"
+                class="button secondary"
+            >
+                Test Google connection →
+            </a>
+        </div>
+
+    </div>
+
+</section>
+
   <div class="template-library-heading">
     <div>
-      <p class="eyebrow">LOCAL CLASSROOM DEMO</p>
-      <h2>Review text library</h2>
-      <p class="muted">Add sample text to demonstrate choosing a review and rating. This flow stays inside the app and never sends text to Google.</p>
-    </div>
+      <p class="eyebrow">GOOGLE REVIEW MANAGEMENT</p>
+      <h2>Review suggestions library</h2>
+<p class="muted">
+    Add editable review suggestions for customers.
+    Customers can select wording that accurately reflects
+    their own experience.
+</p>    </div>
     <a class="button secondary demo-preview-button" href="{{ demo_url }}" target="_blank" rel="noopener">Preview local demo <span aria-hidden="true">↗</span></a>
   </div>
   <div class="template-library-grid">
     <form class="template-add-card" method="post">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <input type="hidden" name="action" value="add_review">
-      <label for="review-text">Add a sample review</label>
-      <textarea id="review-text" name="review_text" rows="4" maxlength="1000" required placeholder="Write example text for the classroom demo"></textarea>
-      <div class="template-add-footer"><span>Up to 1,000 characters · Local demo only</span><button class="primary" type="submit">Add to library <span aria-hidden="true">＋</span></button></div>
+      <label for="review-text">Add a review suggestion</label>
+<textarea
+    id="review-text"
+    name="review_text"
+    rows="4"
+    maxlength="1000"
+    required
+    placeholder="Write an optional review suggestion..."
+></textarea>      <div class="template-add-footer"><span>Up to 1,000 characters · Local demo only</span><button class="primary" type="submit">Add to library <span aria-hidden="true">＋</span></button></div>
     </form>
     <div class="template-list-card">
-      <div class="template-list-heading"><div><h3>Saved sample text</h3><span>{{ unused_count }} available for demo</span></div><b>{{ templates|length }}</b></div>
+      <div class="template-list-heading"><div><h3>Saved sample text</h3><span>{{ unused_count }} suggestions available</span></div><b>{{ templates|length }}</b></div>
       {% if templates %}
         <ul class="template-list">
           {% for item in templates %}
@@ -67,8 +132,10 @@
           {% endfor %}
         </ul>
       {% else %}
-        <p class="template-empty">Your demo library is empty. Add a few examples to preview the selection flow.</p>
-      {% endif %}
+<p class="template-empty">
+    Your review suggestions library is empty.
+    Add suggestions to make them available to customers.
+</p>      {% endif %}
     </div>
   </div>
 </section>

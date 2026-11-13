@@ -1,44 +1,92 @@
+
 {% extends "base.html" %}
-{% block title %}{{ shop.name }} · Share your experience{% endblock %}
-{% block header %}{% endblock %}
-{% block footer %}{% endblock %}
+
+{% block title %}Review {{ shop.name }}{% endblock %}
+
 {% block content %}
-<div class="public-review-page">
-  <header class="public-review-header">
-    <a class="review-brand" href="{{ url_for('customer', public_token=public_token) }}" aria-label="Reviewflow home">
-      <span class="review-brand-mark" aria-hidden="true">r.</span>
-      <span>Review<span class="review-brand-light">flow</span></span>
-    </a>
-    <span class="review-demo-tag"><span aria-hidden="true"></span> CUSTOMER REVIEW</span>
-  </header>
-  <section class="public-review-card" aria-label="Review {{ shop.name }}">
-    <div class="public-review-hero">
-      <div class="public-review-art" aria-hidden="true"><span>✳</span><i></i><b></b></div>
-      <div class="public-review-label"><span></span> A NOTE FOR {{ shop.name|upper }}</div>
-      <h1>Your experience<br>deserves to be <em>heard.</em></h1>
-      <p>Your honest feedback helps people discover local businesses and helps owners learn what matters to their customers.</p>
-      <div class="public-review-shop">
-        <span class="public-shop-avatar">{{ shop.name[:1]|upper }}</span>
-        <span><small>YOU’RE VISITING</small><strong>{{ shop.name }}</strong></span>
-        <span class="public-shop-check" aria-hidden="true">✓</span>
-      </div>
+<section class="customer-card">
+
+    <span class="badge">GOOGLE REVIEWS</span>
+
+    <p class="eyebrow">SHARE YOUR EXPERIENCE</p>
+
+    <h1>Review {{ shop.name }}</h1>
+
+    <p class="muted">
+        Tell others about your genuine experience with this business.
+    </p>
+
+    <div class="review-editor">
+
+        <label for="review-text">
+            Write about your experience
+        </label>
+
+        <textarea
+            id="review-text"
+            rows="6"
+            maxlength="1000"
+            placeholder="Describe your actual experience..."
+        ></textarea>
+
+        <button
+            type="button"
+            class="primary"
+            id="copy-review"
+        >
+            Copy Review
+        </button>
+
+        <p id="copy-status" class="muted" aria-live="polite"></p>
+
     </div>
-    <div class="public-review-action">
-      <div class="public-review-eyebrow">YOUR HONEST FEEDBACK</div>
-      <h2>Share it in your own words</h2>
-      <p>Continue to Google to write and submit your review yourself. You can choose your own rating and edit your words before posting.</p>
-      {% if google_review_url %}
-        <a class="google-review-button" href="{{ google_review_url }}">
-          <span class="google-g" aria-hidden="true">G</span>
-          <span>Continue to Google Reviews</span>
-          <span class="google-arrow" aria-hidden="true">↗</span>
+
+    {% if google_review_url %}
+
+        <a
+            href="{{ google_review_url }}"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="button primary"
+            id="google-review-link"
+        >
+            Continue to Google Reviews →
         </a>
-        <div class="public-review-assurance"><span aria-hidden="true">↗</span> You’ll review and post directly on Google.</div>
-      {% else %}
-        <div class="review-not-configured">This shop is still setting up its Google review link. Please try again later.</div>
-      {% endif %}
-    </div>
-  </section>
-  <p class="public-review-footer">Thanks for supporting local businesses.</p>
-</div>
+
+    {% else %}
+
+        <p class="muted">
+            Google review link is not configured for this shop.
+        </p>
+
+    {% endif %}
+
+</section>
+
+<script>
+    const reviewText = document.getElementById("review-text");
+    const copyButton = document.getElementById("copy-review");
+    const copyStatus = document.getElementById("copy-status");
+
+    copyButton.addEventListener("click", async () => {
+
+        const text = reviewText.value.trim();
+
+        if (!text) {
+            copyStatus.textContent = "Please write your review first.";
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(text);
+            copyStatus.textContent = "Review copied! Continue to Google.";
+        } catch (error) {
+            reviewText.select();
+            copyStatus.textContent =
+                "Automatic copy unavailable. Press Ctrl+C to copy.";
+        }
+
+    });
+</script>
+
 {% endblock %}
