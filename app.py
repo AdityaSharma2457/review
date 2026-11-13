@@ -236,7 +236,7 @@ def create_app(test_config=None):
                 abort(400, description="Unknown dashboard action.")
         templates = get_db().execute(
     """
-    SELECT id, text, NULL AS used_at
+    SELECT id, text, used_at
     FROM review_templates
     WHERE shop_id = ?
     ORDER BY id DESC
@@ -246,9 +246,10 @@ def create_app(test_config=None):
 
         unused_count = get_db().execute(
     """
-    SELECT COUNT(*) AS count
-    FROM review_templates
-    WHERE shop_id = ?
+SELECT COUNT(*) AS count
+FROM review_templates
+WHERE shop_id = ?
+AND used_at IS NULL
     """,
     (shop["id"],),
 ).fetchone()["count"]
@@ -291,10 +292,11 @@ def create_app(test_config=None):
         choices = get_db().execute(
             """
             SELECT id, text
-            FROM review_templates
-            WHERE shop_id = ?
-            ORDER BY RANDOM()
-            LIMIT 5
+FROM review_templates
+WHERE shop_id = ?
+AND used_at IS NULL
+ORDER BY RANDOM()
+LIMIT 5
             """,
             (shop["id"],)
         ).fetchall()
@@ -340,7 +342,31 @@ def create_app(test_config=None):
 
         if template is None:
             abort(404)
+                # Mark the selected review as used
+        cursor = connection.execute(
+            """
+            UPDATE review_templates
+            SET used_at = ?
+            WHERE id = ?
+            AND shop_id = ?
+            AND used_at IS NULL
+            """,
+            (
+                datetime.now(timezone.utc).isoformat(),
+                template_id,
+                shop["id"],
+            ),
+        )
 
+        if cursor.rowcount != 1:
+            connection.rollback()
+            abort(409, description="This review has already been used.")
+
+        connection.commit()
+
+        return redirect(
+            url_for("google_review", public_token=public_token)
+        )
         return  redirect(
     url_for("google_review", public_token=public_token)
 )
