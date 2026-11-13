@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Review {{ shop.name }} · Demo{% endblock %}
+{% block content %}
+<section class="customer-card">
+  <span class="badge">LOCAL-ONLY DEMO</span>
+  <p class="eyebrow">CUSTOMER PREVIEW</p>
+  <h1>Review {{ shop.name }}</h1>
+  <p class="muted">Choose one sample text and a star rating to see how the flow works. Nothing is posted to Google or another review site.</p>
+  {% if choices %}
+    <form method="post" action="{{ url_for('select_review', public_token=public_token) }}" id="review-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <fieldset class="choices">
+        <legend>Choose a sample review</legend>
+        {% for choice in choices %}
+          <label class="choice">
+            <input type="radio" name="review_id" value="{{ choice.id }}" required>
+            <span>{{ choice.text }}</span>
+          </label>
+        {% endfor %}
+      </fieldset>
+      <fieldset class="rating">
+        <legend>Your demo rating</legend>
+        <div class="stars" role="radiogroup" aria-label="Choose a rating from one to five stars">
+          {% for value in range(5, 0, -1) %}
+            <input type="radio" id="star-{{ value }}" name="rating" value="{{ value }}" required>
+            <label for="star-{{ value }}" title="{{ value }} star{{ 's' if value != 1 else '' }}">★</label>
+          {% endfor %}
+        </div>
+        <p class="muted" id="rating-label" aria-live="polite">Select a rating</p>
+      </fieldset>
+      <button class="primary" type="submit">Continue to local demo</button>
+    </form>
+    <script>
+      document.querySelectorAll('.stars input').forEach((input) => {
+        input.addEventListener('change', () => {
+          document.getElementById('rating-label').textContent = `${input.value} out of 5 stars`;
+        });
+      });
+    </script>
+  {% else %}
+    <div class="empty-state">There are no unused sample reviews for this shop. Ask the shop owner to add more demo text.</div>
+  {% endif %}
+</section>
+{% endblock %}

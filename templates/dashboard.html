@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}{{ shop.name }} · Review Flow Demo{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <div><p class="eyebrow">SHOP DASHBOARD</p><h1>{{ shop.name }}</h1></div>
+  <span class="badge">LOCAL SIMULATION</span>
+</div>
+<div class="dashboard-grid">
+  <section class="panel qr-panel">
+    <p class="eyebrow">CUSTOMER QR CODE</p>
+    <h2>Try the customer flow</h2>
+    <p class="muted">Scan this code or open the link on this device. It leads to this local demo only.</p>
+    <img class="qr-code" src="data:image/png;base64,{{ qr_data }}" alt="QR code for the local customer demo">
+    <a class="button secondary" href="{{ customer_url }}">Open customer demo</a>
+  </section>
+  <section class="panel">
+    <p class="eyebrow">DEMO TEXT</p>
+    <h2>Add selectable text</h2>
+    <p class="muted">Text is shown only in this prototype; it is not sent to any review service.</p>
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label>Review text<textarea name="review_text" rows="4" maxlength="1000" required placeholder="Add a sample review for the demo"></textarea></label>
+      <button class="primary" type="submit">Add demo text</button>
+    </form>
+  </section>
+</div>
+<section class="panel list-panel">
+  <div class="section-heading"><div><p class="eyebrow">YOUR SHOP</p><h2>Saved demo text</h2></div><span class="muted">{{ templates|length }} total</span></div>
+  {% if templates %}
+    <ul class="review-list">
+      {% for item in templates %}
+        <li><span>{{ item.text }}</span><span class="status {{ 'used' if item.used_at else '' }}">{{ 'Used' if item.used_at else 'Unused' }}</span></li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="empty-state">No demo text yet. Add a few items to see the customer selection flow.</p>
+  {% endif %}
+</section>
+{% endblock %}

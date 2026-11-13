@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Create a shop · Review Flow Demo{% endblock %}
+{% block content %}
+<section class="auth-card">
+  <p class="eyebrow">GET STARTED</p>
+  <h1>Create your demo shop</h1>
+  <p class="muted">Your shop's data is separated from other shops in the shared database.</p>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>Username<input name="username" autocomplete="username" required maxlength="80"></label>
+    <label>Password <span class="muted">(8 characters minimum)</span><input name="password" type="password" autocomplete="new-password" required minlength="8"></label>
+    <label>Shop name<input name="shop_name" required maxlength="120"></label>
+    <button class="primary" type="submit">Create shop</button>
+  </form>
+  <p class="muted">Already registered? <a href="{{ url_for('login') }}">Sign in</a></p>
+</section>
+{% endblock %}

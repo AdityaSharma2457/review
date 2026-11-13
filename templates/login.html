@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Sign in · Review Flow Demo{% endblock %}
+{% block content %}
+<section class="auth-card">
+  <p class="eyebrow">SHOP ADMIN</p>
+  <h1>Welcome back</h1>
+  <p class="muted">Sign in to manage your local review-flow demo.</p>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>Username<input name="username" autocomplete="username" required maxlength="80"></label>
+    <label>Password<input name="password" type="password" autocomplete="current-password" required></label>
+    <button class="primary" type="submit">Sign in</button>
+  </form>
+  <p class="muted">New here? <a href="{{ url_for('register') }}">Create a demo shop</a></p>
+</section>
+{% endblock %}

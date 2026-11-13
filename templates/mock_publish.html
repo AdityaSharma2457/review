@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Local publish simulation · Review Flow Demo{% endblock %}
+{% block content %}
+<section class="customer-card">
+  <span class="badge">MOCK DESTINATION · NO EXTERNAL POST</span>
+  <p class="eyebrow">PUBLISH PREVIEW</p>
+  <h1>{{ demo_review.shop_name }}</h1>
+  <p class="stars-display" aria-label="{{ demo_review.rating }} out of 5 stars">{{ '★' * demo_review.rating }}<span>{{ '☆' * (5 - demo_review.rating) }}</span></p>
+  <blockquote>{{ demo_review.review_text }}</blockquote>
+  {% if demo_review.status == 'published' %}
+    <div class="success" role="status">Simulation complete. This demo record was saved locally; no review site was contacted.</div>
+  {% else %}
+    <p class="muted">This is a mock destination. The demo will automatically save this result locally; no review site is contacted.</p>
+    <div class="publish-progress" id="publish-progress" role="status" aria-live="polite">
+      <span class="spinner" aria-hidden="true"></span>
+      <span>Publishing to the local demo…</span>
+    </div>
+    <form method="post" id="publish-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button class="primary" type="submit">Complete local demo now</button>
+    </form>
+    <script>
+      window.setTimeout(() => {
+        const form = document.getElementById('publish-form');
+        if (form) form.requestSubmit();
+      }, 1800);
+    </script>
+  {% endif %}
+</section>
+{% endblock %}
