@@ -3,25 +3,38 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#153f35">
   <title>{% block title %}Review Flow Demo{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-  <header class="topbar">
-    <a class="brand" href="{{ url_for('index') }}">Review Flow <span>DEMO</span></a>
-    {% if session.get('user_id') %}
-      <form method="post" action="{{ url_for('logout') }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <button class="link-button" type="submit">Sign out</button>
-      </form>
-    {% endif %}
+  {% block header %}
+  <header class="site-header">
+    <div class="site-header-inner">
+      <a class="brand" href="{{ url_for('index') }}">
+        <span class="brand-mark" aria-hidden="true">r.</span>
+        <span>Review<span class="brand-light">flow</span><small>SHOP CONSOLE</small></span>
+      </a>
+      <div class="header-actions">
+        <span class="header-demo"><span></span> COLLEGE PROJECT</span>
+        {% if session.get('user_id') %}
+          <form method="post" action="{{ url_for('logout') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button class="signout-button" type="submit">Sign out <span aria-hidden="true">↗</span></button>
+          </form>
+        {% endif %}
+      </div>
+    </div>
   </header>
-  <main class="container">
+  {% endblock %}
+  <main class="container {% block main_class %}{% endblock %}">
     {% for message in get_flashed_messages() %}
       <div class="notice" role="status">{{ message }}</div>
     {% endfor %}
     {% block content %}{% endblock %}
   </main>
-  <footer>College project prototype · Reviews are simulated locally and are never sent to a review platform.</footer>
+  {% block footer %}
+  <footer>College project prototype · Customers write and submit their own reviews directly on Google.</footer>
+  {% endblock %}
 </body>
 </html>

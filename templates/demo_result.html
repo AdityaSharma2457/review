@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Local demo result · {{ demo_review.shop_name }}{% endblock %}
+{% block content %}
+<section class="demo-result-card">
+  <div class="demo-result-icon" aria-hidden="true">✓</div>
+  <span class="local-only-pill"><span></span> SAVED IN LOCAL DEMO</span>
+  <p class="eyebrow">PROTOTYPE RESULT</p>
+  <h1>{{ demo_review.shop_name }}</h1>
+  <p class="demo-result-stars" aria-label="{{ demo_review.rating }} out of 5 stars">{{ '★' * demo_review.rating }}<span>{{ '☆' * (5 - demo_review.rating) }}</span></p>
+  <blockquote>{{ demo_review.review_text }}</blockquote>
+  <div class="demo-result-notice"><strong>Demo complete.</strong> The selected sample was marked as used and saved in this app’s database. It was not sent to Google or any review platform.</div>
+  <a class="button secondary" href="{{ url_for('review_demo', public_token=demo_review.shop_public_token) }}">Back to demo picker</a>
+</section>
+{% endblock %}

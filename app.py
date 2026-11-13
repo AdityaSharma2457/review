@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from functools import wraps
 from io import BytesIO
 from pathlib import Path
+from urllib.parse import urlencode
 
 import qrcode
 from flask import (
@@ -33,6 +34,7 @@ CREATE TABLE IF NOT EXISTS shops (
     id INTEGER PRIMARY KEY,
     user_id INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
+    place_id TEXT NOT NULL,
     public_token TEXT NOT NULL UNIQUE
 );
 CREATE TABLE IF NOT EXISTS review_templates (
@@ -71,6 +73,13 @@ def create_app(test_config=None):
     connection = sqlite3.connect(app.config["DATABASE"])
     try:
         connection.executescript(SCHEMA)
+        shop_columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(shops)")
+        }
+        if "place_id" not in shop_columns:
+            connection.execute(
+                "ALTER TABLE shops ADD COLUMN place_id TEXT NOT NULL DEFAULT ''"
+            )
     finally:
         connection.close()
 
@@ -112,7 +121,7 @@ def create_app(test_config=None):
 
     def current_shop():
         return get_db().execute(
-            "SELECT id, name, public_token FROM shops WHERE user_id = ?",
+            "SELECT id, name, place_id, public_token FROM shops WHERE user_id = ?",
             (session["user_id"],),
         ).fetchone()
 
@@ -128,8 +137,11 @@ def create_app(test_config=None):
             username = request.form.get("username", "").strip().lower()
             password = request.form.get("password", "")
             shop_name = request.form.get("shop_name", "").strip()
+            place_id = request.form.get("place_id", "").strip()
             if not username or len(username) > 80 or not shop_name or len(shop_name) > 120:
                 flash("Enter a username and shop name within the allowed length.")
+            elif not place_id or len(place_id) > 255 or place_id.lower().startswith(("http://", "https://")):
+                flash("Enter a valid Google Place ID, not a web address.")
             elif len(password) < 8:
                 flash("Use a password with at least 8 characters.")
             else:
@@ -140,8 +152,14 @@ def create_app(test_config=None):
                         (username, generate_password_hash(password)),
                     )
                     connection.execute(
-                        "INSERT INTO shops (user_id, name, public_token) VALUES (?, ?, ?)",
-                        (cursor.lastrowid, shop_name, secrets.token_urlsafe(24)),
+                        """INSERT INTO shops (user_id, name, place_id, public_token)
+                           VALUES (?, ?, ?, ?)""",
+                        (
+                            cursor.lastrowid,
+                            shop_name,
+                            place_id,
+                            secrets.token_urlsafe(24),
+                        ),
                     )
                     connection.commit()
                 except sqlite3.IntegrityError:
@@ -150,7 +168,7 @@ def create_app(test_config=None):
                 else:
                     session.clear()
                     session["user_id"] = cursor.lastrowid
-                    flash("Your demo shop is ready.")
+                    flash("Your shop is ready.")
                     return redirect(url_for("dashboard"))
         return render_template("register.html")
 
@@ -180,31 +198,59 @@ def create_app(test_config=None):
     @app.route("/dashboard", methods=["GET", "POST"])
     @login_required
     def dashboard():
-        connection = get_db()
         shop = current_shop()
         if shop is None:
             abort(404)
         if request.method == "POST":
-            text = request.form.get("review_text", "").strip()
-            if not text or len(text) > 1000:
-                flash("Enter review text (up to 1,000 characters).")
+            connection = get_db()
+            action = request.form.get("action")
+            if action == "add_review":
+                text = request.form.get("review_text", "").strip()
+                if not text or len(text) > 1000:
+                    flash("Enter demo review text (up to 1,000 characters).")
+                else:
+                    connection.execute(
+                        "INSERT INTO review_templates (shop_id, text) VALUES (?, ?)",
+                        (shop["id"], text),
+                    )
+                    connection.commit()
+                    flash("Demo review text added.")
+                    return redirect(url_for("dashboard"))
+            elif action == "update_place_id":
+                place_id = request.form.get("place_id", "").strip()
+                if (
+                    not place_id
+                    or len(place_id) > 255
+                    or place_id.lower().startswith(("http://", "https://"))
+                ):
+                    flash("Enter a valid Google Place ID, not a web address.")
+                else:
+                    connection.execute(
+                        "UPDATE shops SET place_id = ? WHERE id = ? AND user_id = ?",
+                        (place_id, shop["id"], session["user_id"]),
+                    )
+                    connection.commit()
+                    flash("Google Place ID updated.")
+                    return redirect(url_for("dashboard"))
             else:
-                connection.execute(
-                    "INSERT INTO review_templates (shop_id, text) VALUES (?, ?)",
-                    (shop["id"], text),
-                )
-                connection.commit()
-                flash("Demo text added.")
-                return redirect(url_for("dashboard"))
-
-        templates = connection.execute(
-            "SELECT id, text, used_at FROM review_templates WHERE shop_id = ? ORDER BY id DESC",
+                abort(400, description="Unknown dashboard action.")
+        templates = get_db().execute(
+            """SELECT id, text, used_at FROM review_templates
+               WHERE shop_id = ? ORDER BY id DESC""",
             (shop["id"],),
         ).fetchall()
-        customer_url = url_for(
+        unused_count = get_db().execute(
+            """SELECT COUNT(*) AS count FROM review_templates
+               WHERE shop_id = ? AND used_at IS NULL""",
+            (shop["id"],),
+        ).fetchone()["count"]
+        demo_url = url_for(
+            "review_demo", public_token=shop["public_token"], _external=True
+        )
+        qr_customer_url = url_for(
             "customer", public_token=shop["public_token"], _external=True
         )
-        qr = qrcode.make(customer_url)
+        qr = qrcode.make(qr_customer_url)
         buffer = BytesIO()
         qr.save(buffer, format="PNG")
         qr_data = base64.b64encode(buffer.getvalue()).decode("ascii")
@@ -212,12 +258,14 @@ def create_app(test_config=None):
             "dashboard.html",
             shop=shop,
             templates=templates,
-            customer_url=customer_url,
+            unused_count=unused_count,
+            demo_url=demo_url,
+            customer_url=qr_customer_url,
             qr_data=qr_data,
         )
 
-    @app.get("/customer/<public_token>")
-    def customer(public_token):
+    @app.get("/demo/<public_token>")
+    def review_demo(public_token):
         shop = get_db().execute(
             "SELECT id, name FROM shops WHERE public_token = ?", (public_token,)
         ).fetchone()
@@ -230,52 +278,52 @@ def create_app(test_config=None):
             (shop["id"],),
         ).fetchall()
         return render_template(
-            "customer.html",
+            "review_demo.html",
             shop=shop,
             choices=choices,
             public_token=public_token,
         )
 
-    @app.post("/customer/<public_token>/select")
-    def select_review(public_token):
+    @app.post("/demo/<public_token>/select")
+    def select_demo_review(public_token):
         connection = get_db()
         shop = connection.execute(
             "SELECT id FROM shops WHERE public_token = ?", (public_token,)
         ).fetchone()
         if shop is None:
             abort(404)
-        review_id = request.form.get("review_id", type=int)
+        template_id = request.form.get("review_id", type=int)
         rating = request.form.get("rating", type=int)
-        if review_id is None or rating is None or not 1 <= rating <= 5:
-            abort(400, description="Choose one review and a rating from 1 to 5.")
+        if template_id is None or rating is None or not 1 <= rating <= 5:
+            abort(400, description="Choose one demo review and a rating from 1 to 5.")
 
         connection.execute("BEGIN IMMEDIATE")
         template = connection.execute(
             """SELECT id, text FROM review_templates
                WHERE id = ? AND shop_id = ? AND used_at IS NULL""",
-            (review_id, shop["id"]),
+            (template_id, shop["id"]),
         ).fetchone()
         if template is None:
             connection.rollback()
             flash("That demo review is no longer available. Choose another.")
-            return redirect(url_for("customer", public_token=public_token))
+            return redirect(url_for("review_demo", public_token=public_token))
 
         now = datetime.now(timezone.utc).isoformat()
         updated = connection.execute(
             "UPDATE review_templates SET used_at = ? WHERE id = ? AND used_at IS NULL",
-            (now, review_id),
+            (now, template_id),
         )
         if updated.rowcount != 1:
             connection.rollback()
             flash("That demo review was just used. Choose another.")
-            return redirect(url_for("customer", public_token=public_token))
+            return redirect(url_for("review_demo", public_token=public_token))
         cursor = connection.execute(
             """INSERT INTO demo_reviews
                (shop_id, template_id, public_token, review_text, rating, status, created_at)
-               VALUES (?, ?, ?, ?, ?, 'selected', ?)""",
+               VALUES (?, ?, ?, ?, ?, 'published', ?)""",
             (
                 shop["id"],
-                template["id"],
+                template_id,
                 secrets.token_urlsafe(24),
                 template["text"],
                 rating,
@@ -283,31 +331,59 @@ def create_app(test_config=None):
             ),
         )
         connection.commit()
-        token = connection.execute(
-            "SELECT public_token FROM demo_reviews WHERE id = ?", (cursor.lastrowid,)
-        ).fetchone()["public_token"]
-        return redirect(url_for("mock_publish", public_token=token))
+        result = connection.execute(
+            "SELECT public_token FROM demo_reviews WHERE id = ?",
+            (cursor.lastrowid,),
+        ).fetchone()
+        return redirect(
+            url_for("demo_result", public_token=result["public_token"])
+        )
 
-    @app.route("/demo/<public_token>", methods=["GET", "POST"])
-    def mock_publish(public_token):
-        connection = get_db()
-        demo_review = connection.execute(
-            """SELECT demo_reviews.*, shops.name AS shop_name
+    @app.get("/demo/result/<public_token>")
+    def demo_result(public_token):
+        demo_review = get_db().execute(
+            """SELECT demo_reviews.*, shops.name AS shop_name,
+                      shops.public_token AS shop_public_token
                FROM demo_reviews JOIN shops ON shops.id = demo_reviews.shop_id
                WHERE demo_reviews.public_token = ?""",
             (public_token,),
         ).fetchone()
         if demo_review is None:
             abort(404)
-        if request.method == "POST" and demo_review["status"] == "selected":
-            connection.execute(
-                """UPDATE demo_reviews SET status = 'published', published_at = ?
-                   WHERE public_token = ? AND status = 'selected'""",
-                (datetime.now(timezone.utc).isoformat(), public_token),
-            )
-            connection.commit()
-            return redirect(url_for("mock_publish", public_token=public_token))
-        return render_template("mock_publish.html", demo_review=demo_review)
+        return render_template("demo_result.html", demo_review=demo_review)
+
+    @app.get("/customer/<public_token>")
+    def customer(public_token):
+        shop = get_db().execute(
+            "SELECT id, name, place_id FROM shops WHERE public_token = ?",
+            (public_token,),
+        ).fetchone()
+        if shop is None:
+            abort(404)
+        return render_template(
+            "customer.html",
+            shop=shop,
+            public_token=public_token,
+            google_review_url=(
+                url_for("google_review", public_token=public_token)
+                if shop["place_id"]
+                else None
+            ),
+        )
+
+    @app.get("/customer/<public_token>/google")
+    def google_review(public_token):
+        shop = get_db().execute(
+            "SELECT place_id FROM shops WHERE public_token = ?", (public_token,)
+        ).fetchone()
+        if shop is None:
+            abort(404)
+        if not shop["place_id"]:
+            abort(409, description="This shop has not configured its Google Place ID.")
+        review_url = "https://search.google.com/local/writereview?" + urlencode(
+            {"placeid": shop["place_id"]}
+        )
+        return redirect(review_url)
 
     return app
 

@@ -1,44 +1,44 @@
 {% extends "base.html" %}
-{% block title %}Review {{ shop.name }} · Demo{% endblock %}
+{% block title %}{{ shop.name }} · Share your experience{% endblock %}
+{% block header %}{% endblock %}
+{% block footer %}{% endblock %}
 {% block content %}
-<section class="customer-card">
-  <span class="badge">LOCAL-ONLY DEMO</span>
-  <p class="eyebrow">CUSTOMER PREVIEW</p>
-  <h1>Review {{ shop.name }}</h1>
-  <p class="muted">Choose one sample text and a star rating to see how the flow works. Nothing is posted to Google or another review site.</p>
-  {% if choices %}
-    <form method="post" action="{{ url_for('select_review', public_token=public_token) }}" id="review-form">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-      <fieldset class="choices">
-        <legend>Choose a sample review</legend>
-        {% for choice in choices %}
-          <label class="choice">
-            <input type="radio" name="review_id" value="{{ choice.id }}" required>
-            <span>{{ choice.text }}</span>
-          </label>
-        {% endfor %}
-      </fieldset>
-      <fieldset class="rating">
-        <legend>Your demo rating</legend>
-        <div class="stars" role="radiogroup" aria-label="Choose a rating from one to five stars">
-          {% for value in range(5, 0, -1) %}
-            <input type="radio" id="star-{{ value }}" name="rating" value="{{ value }}" required>
-            <label for="star-{{ value }}" title="{{ value }} star{{ 's' if value != 1 else '' }}">★</label>
-          {% endfor %}
-        </div>
-        <p class="muted" id="rating-label" aria-live="polite">Select a rating</p>
-      </fieldset>
-      <button class="primary" type="submit">Continue to local demo</button>
-    </form>
-    <script>
-      document.querySelectorAll('.stars input').forEach((input) => {
-        input.addEventListener('change', () => {
-          document.getElementById('rating-label').textContent = `${input.value} out of 5 stars`;
-        });
-      });
-    </script>
-  {% else %}
-    <div class="empty-state">There are no unused sample reviews for this shop. Ask the shop owner to add more demo text.</div>
-  {% endif %}
-</section>
+<div class="public-review-page">
+  <header class="public-review-header">
+    <a class="review-brand" href="{{ url_for('customer', public_token=public_token) }}" aria-label="Reviewflow home">
+      <span class="review-brand-mark" aria-hidden="true">r.</span>
+      <span>Review<span class="review-brand-light">flow</span></span>
+    </a>
+    <span class="review-demo-tag"><span aria-hidden="true"></span> CUSTOMER REVIEW</span>
+  </header>
+  <section class="public-review-card" aria-label="Review {{ shop.name }}">
+    <div class="public-review-hero">
+      <div class="public-review-art" aria-hidden="true"><span>✳</span><i></i><b></b></div>
+      <div class="public-review-label"><span></span> A NOTE FOR {{ shop.name|upper }}</div>
+      <h1>Your experience<br>deserves to be <em>heard.</em></h1>
+      <p>Your honest feedback helps people discover local businesses and helps owners learn what matters to their customers.</p>
+      <div class="public-review-shop">
+        <span class="public-shop-avatar">{{ shop.name[:1]|upper }}</span>
+        <span><small>YOU’RE VISITING</small><strong>{{ shop.name }}</strong></span>
+        <span class="public-shop-check" aria-hidden="true">✓</span>
+      </div>
+    </div>
+    <div class="public-review-action">
+      <div class="public-review-eyebrow">YOUR HONEST FEEDBACK</div>
+      <h2>Share it in your own words</h2>
+      <p>Continue to Google to write and submit your review yourself. You can choose your own rating and edit your words before posting.</p>
+      {% if google_review_url %}
+        <a class="google-review-button" href="{{ google_review_url }}">
+          <span class="google-g" aria-hidden="true">G</span>
+          <span>Continue to Google Reviews</span>
+          <span class="google-arrow" aria-hidden="true">↗</span>
+        </a>
+        <div class="public-review-assurance"><span aria-hidden="true">↗</span> You’ll review and post directly on Google.</div>
+      {% else %}
+        <div class="review-not-configured">This shop is still setting up its Google review link. Please try again later.</div>
+      {% endif %}
+    </div>
+  </section>
+  <p class="public-review-footer">Thanks for supporting local businesses.</p>
+</div>
 {% endblock %}

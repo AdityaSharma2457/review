@@ -1,17 +1,35 @@
 {% extends "base.html" %}
 {% block title %}Create a shop · Review Flow Demo{% endblock %}
 {% block content %}
-<section class="auth-card">
-  <p class="eyebrow">GET STARTED</p>
-  <h1>Create your demo shop</h1>
-  <p class="muted">Your shop's data is separated from other shops in the shared database.</p>
-  <form method="post">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-    <label>Username<input name="username" autocomplete="username" required maxlength="80"></label>
-    <label>Password <span class="muted">(8 characters minimum)</span><input name="password" type="password" autocomplete="new-password" required minlength="8"></label>
-    <label>Shop name<input name="shop_name" required maxlength="120"></label>
-    <button class="primary" type="submit">Create shop</button>
-  </form>
-  <p class="muted">Already registered? <a href="{{ url_for('login') }}">Sign in</a></p>
-</section>
+<div class="auth-layout">
+  <aside class="auth-story">
+    <div class="auth-story-mark" aria-hidden="true">✳</div>
+    <p class="auth-story-kicker">A BETTER WAY TO BE HEARD</p>
+    <h1>Make every<br>good moment<br><em>count.</em></h1>
+    <p class="auth-story-copy">Give your guests a simple path to share their honest experience with your business.</p>
+    <div class="auth-story-foot"><span>01</span> YOUR BUSINESS, YOUR COMMUNITY</div>
+    <div class="auth-decoration auth-decoration-one"></div>
+    <div class="auth-decoration auth-decoration-two"></div>
+  </aside>
+  <section class="auth-card">
+    <div class="auth-card-heading">
+      <p class="eyebrow">GET STARTED</p>
+      <h2>Create your shop account</h2>
+      <p class="muted">Set up your space and connect your Google review page.</p>
+    </div>
+    <form method="post" class="auth-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label>Shop name<input name="shop_name" autocomplete="organization" required maxlength="120" placeholder="e.g. Moss & Maple Cafe"></label>
+      <label>Google Place ID
+        <input name="place_id" autocomplete="off" required maxlength="255" placeholder="e.g. ChIJ..." aria-describedby="place-id-help">
+        <span class="field-help" id="place-id-help">Connects the QR flow to your Google review page. Find it with the <a href="https://developers.google.com/maps/documentation/javascript/examples/places-placeid-finder" target="_blank" rel="noopener">Google Place ID Finder ↗</a>.</span>
+      </label>
+      <label>Username<input name="username" autocomplete="username" required maxlength="80" placeholder="Choose a username"></label>
+      <label>Password<input name="password" type="password" autocomplete="new-password" required minlength="8" placeholder="At least 8 characters"><span class="field-help">Use at least 8 characters.</span></label>
+      <button class="primary auth-submit" type="submit">Create shop account <span aria-hidden="true">→</span></button>
+    </form>
+    <p class="auth-switch">Already have an account? <a href="{{ url_for('login') }}">Sign in</a></p>
+    <p class="auth-note"><span aria-hidden="true">ⓘ</span> Customers write and submit their own reviews on Google.</p>
+  </section>
+</div>
 {% endblock %}

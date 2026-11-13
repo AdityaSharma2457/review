@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Local review-picker demo · {{ shop.name }}{% endblock %}
+{% block content %}
+<div class="local-demo-shell">
+  <header class="local-demo-topline">
+    <a class="review-brand" href="{{ url_for('review_demo', public_token=public_token) }}" aria-label="Reviewflow demo home">
+      <span class="review-brand-mark" aria-hidden="true">r.</span>
+      <span>Review<span class="review-brand-light">flow</span></span>
+    </a>
+    <span class="local-only-pill"><span></span> LOCAL DEMO · NOT GOOGLE</span>
+  </header>
+  <section class="local-demo-card">
+    <div class="local-demo-heading">
+      <p class="eyebrow">CLASSROOM PREVIEW</p>
+      <h1>Try the review picker</h1>
+      <p>Choose an example from <strong>{{ shop.name }}</strong> and a rating to see how this prototype records a local demo result.</p>
+    </div>
+    {% if choices %}
+      <form method="post" action="{{ url_for('select_demo_review', public_token=public_token) }}" id="demo-review-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <fieldset class="demo-choice-fieldset">
+          <legend><span>01</span> Pick one sample text <small>Up to five unused examples</small></legend>
+          <div class="demo-choice-list">
+            {% for choice in choices %}
+              <label class="demo-choice">
+                <input type="radio" name="review_id" value="{{ choice.id }}" required>
+                <span class="demo-choice-radio" aria-hidden="true"></span>
+                <span class="demo-choice-text">{{ choice.text }}</span>
+                <span class="demo-choice-check" aria-hidden="true">✓</span>
+              </label>
+            {% endfor %}
+          </div>
+        </fieldset>
+        <fieldset class="demo-rating-fieldset">
+          <legend><span>02</span> Choose a demo rating</legend>
+          <div class="demo-stars" role="radiogroup" aria-label="Choose a local demo rating from one to five stars">
+            {% for value in range(5, 0, -1) %}
+              <input type="radio" id="demo-star-{{ value }}" name="rating" value="{{ value }}" required>
+              <label for="demo-star-{{ value }}" title="{{ value }} star{{ 's' if value != 1 else '' }}">★</label>
+            {% endfor %}
+          </div>
+          <p id="demo-rating-label" aria-live="polite">Select a rating for this local demo</p>
+        </fieldset>
+        <button class="demo-submit" type="submit" id="demo-submit" disabled>
+          <span>Save demo result locally</span><span aria-hidden="true">→</span>
+        </button>
+        <p class="demo-no-external">This action marks the sample as used and saves a demo record in this app only. Nothing is sent to Google.</p>
+      </form>
+      <script>
+        const demoForm = document.getElementById('demo-review-form');
+        const demoSubmit = document.getElementById('demo-submit');
+        const demoRatingLabel = document.getElementById('demo-rating-label');
+        demoForm.addEventListener('change', () => {
+          const review = demoForm.querySelector('input[name="review_id"]:checked');
+          const rating = demoForm.querySelector('input[name="rating"]:checked');
+          demoSubmit.disabled = !(review && rating);
+          demoRatingLabel.textContent = rating
+            ? `${rating.value} out of 5 stars · Local demo`
+            : 'Select a rating for this local demo';
+        });
+      </script>
+    {% else %}
+      <div class="demo-empty-state">
+        <span aria-hidden="true">✦</span>
+        <h2>No unused examples</h2>
+        <p>All sample text has been used in this demo, or the shopkeeper has not added any yet.</p>
+        <a href="{{ url_for('login') }}">Shopkeeper sign in</a>
+      </div>
+    {% endif %}
+  </section>
+  <p class="local-demo-footer">Classroom prototype only · Sample reviews are not customer endorsements.</p>
+</div>
+{% endblock %}

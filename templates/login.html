@@ -1,16 +1,29 @@
 {% extends "base.html" %}
 {% block title %}Sign in · Review Flow Demo{% endblock %}
 {% block content %}
-<section class="auth-card">
-  <p class="eyebrow">SHOP ADMIN</p>
-  <h1>Welcome back</h1>
-  <p class="muted">Sign in to manage your local review-flow demo.</p>
-  <form method="post">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-    <label>Username<input name="username" autocomplete="username" required maxlength="80"></label>
-    <label>Password<input name="password" type="password" autocomplete="current-password" required></label>
-    <button class="primary" type="submit">Sign in</button>
-  </form>
-  <p class="muted">New here? <a href="{{ url_for('register') }}">Create a demo shop</a></p>
-</section>
+<div class="auth-layout">
+  <aside class="auth-story login-story">
+    <div class="auth-story-mark" aria-hidden="true">✳</div>
+    <p class="auth-story-kicker">YOUR SHOP, IN ONE PLACE</p>
+    <h1>Welcome<br>back to<br><em>your space.</em></h1>
+    <p class="auth-story-copy">Manage your review link and help customers share their experience with ease.</p>
+    <div class="auth-story-foot"><span>✦</span> SIMPLE. PERSONAL. YOURS.</div>
+    <div class="auth-decoration auth-decoration-one"></div>
+    <div class="auth-decoration auth-decoration-two"></div>
+  </aside>
+  <section class="auth-card login-card">
+    <div class="auth-card-heading">
+      <p class="eyebrow">SHOP CONSOLE</p>
+      <h2>Sign in to continue</h2>
+      <p class="muted">Enter your account details to open your dashboard.</p>
+    </div>
+    <form method="post" class="auth-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label>Username<input name="username" autocomplete="username" required maxlength="80" placeholder="Your username"></label>
+      <label>Password<input name="password" type="password" autocomplete="current-password" required placeholder="Your password"></label>
+      <button class="primary auth-submit" type="submit">Sign in <span aria-hidden="true">→</span></button>
+    </form>
+    <p class="auth-switch">New to Reviewflow? <a href="{{ url_for('register') }}">Create a shop account</a></p>
+  </section>
+</div>
 {% endblock %}

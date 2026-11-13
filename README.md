@@ -1,8 +1,8 @@
 # Review Flow College Demo
 
-A small Flask and SQLite prototype for demonstrating shop setup, QR codes, sample-review selection, star ratings, and a simulated publish step.
+A Flask and SQLite college project for shop accounts, QR codes, Google review links, and a separate local review-picker demonstration.
 
-**This app is local-only.** After a customer chooses sample text and a rating, the mock destination automatically saves the result to this app's SQLite database after a short progress animation. It does not contact Google, any other review platform, or a browser automation service. A manual button is also available if JavaScript is disabled. Sample review text and the simulated publish result are not real customer reviews.
+Shopkeepers enter their Google Place ID when registering; the customer QR page links directly to that shop's Google review page, where customers write and submit their own reviews. Separately, the dashboard has a sample-text library and local classroom demo picker. That isolated demo lets a visitor select one of up to five unused examples and a rating, then records the result locally and marks the example as used. The sample text picker is not part of the customer-to-Google flow and never submits anything to Google or another review platform.
 
 ## Run locally
 
@@ -15,7 +15,7 @@ python -m pip install -r requirements.txt
 python app.py
 ```
 
-Open <http://127.0.0.1:5000>, create a demo account and shop, then add sample text and scan/open the QR code. The default SQLite database is created at `instance/review_demo.sqlite3`. Set `REVIEW_DEMO_DATABASE` to use a different local database path.
+Open <http://127.0.0.1:5000>, create a shop account with its Google Place ID, then scan or open the customer QR code from the dashboard. Use the dashboard's separate **Preview local demo** link to try the sample picker. Use Google's [Place ID Finder](https://developers.google.com/maps/documentation/javascript/examples/places-placeid-finder) if you need to look up the ID. Existing databases are migrated to add the Place ID field and demo tables; existing shopkeepers can update their Place ID on the dashboard. The default SQLite database is created at `instance/review_demo.sqlite3`. Set `REVIEW_DEMO_DATABASE` to use a different local database path.
 
 ## Test
 
@@ -23,4 +23,4 @@ Open <http://127.0.0.1:5000>, create a demo account and shop, then add sample te
 python -m unittest discover -s tests -v
 ```
 
-The app demonstrates tenant scoping in a shared database: shop-owned records are queried by `shop_id`. The built-in Flask server and generated development secret are for local coursework demonstrations only, not production deployment.
+The app demonstrates tenant scoping in a shared database. The built-in Flask server and generated development secret are for local coursework demonstrations only, not production deployment.

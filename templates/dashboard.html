@@ -1,39 +1,84 @@
 {% extends "base.html" %}
-{% block title %}{{ shop.name }} · Review Flow Demo{% endblock %}
+{% block title %}{{ shop.name }} · Reviewflow{% endblock %}
 {% block content %}
-<div class="page-heading">
-  <div><p class="eyebrow">SHOP DASHBOARD</p><h1>{{ shop.name }}</h1></div>
-  <span class="badge">LOCAL SIMULATION</span>
-</div>
-<div class="dashboard-grid">
-  <section class="panel qr-panel">
-    <p class="eyebrow">CUSTOMER QR CODE</p>
-    <h2>Try the customer flow</h2>
-    <p class="muted">Scan this code or open the link on this device. It leads to this local demo only.</p>
-    <img class="qr-code" src="data:image/png;base64,{{ qr_data }}" alt="QR code for the local customer demo">
-    <a class="button secondary" href="{{ customer_url }}">Open customer demo</a>
-  </section>
-  <section class="panel">
-    <p class="eyebrow">DEMO TEXT</p>
-    <h2>Add selectable text</h2>
-    <p class="muted">Text is shown only in this prototype; it is not sent to any review service.</p>
-    <form method="post">
+<section class="dashboard-welcome">
+  <div>
+    <p class="eyebrow">YOUR WORKSPACE</p>
+    <h1>Good to see you.</h1>
+    <p class="muted">Your review link is ready to share with your community.</p>
+  </div>
+  <div class="welcome-shop"><span class="welcome-shop-icon">{{ shop.name[:1]|upper }}</span><span><small>MANAGING</small><strong>{{ shop.name }}</strong></span><span class="welcome-live"><i></i> READY</span></div>
+</section>
+
+<section class="dashboard-grid">
+  <article class="panel qr-panel">
+    <div class="panel-heading">
+      <div><p class="eyebrow">YOUR SHAREABLE LINK</p><h2>Make it easy to find you</h2></div>
+      <span class="panel-icon" aria-hidden="true">⌁</span>
+    </div>
+    <p class="muted">Show this QR code at your counter, on a receipt, or anywhere customers can find it.</p>
+    <div class="qr-frame"><img class="qr-code" src="data:image/png;base64,{{ qr_data }}" alt="QR code opening the customer page for {{ shop.name }}"></div>
+    <a class="button secondary dashboard-open-link" href="{{ customer_url }}" target="_blank" rel="noopener">Preview customer page <span aria-hidden="true">↗</span></a>
+  </article>
+
+  <article class="panel destination-panel">
+    <p class="eyebrow">GOOGLE REVIEW DESTINATION</p>
+    <h2>Connected to your place</h2>
+    <p class="muted">Customers who scan your code can continue to your Google review page and share their own feedback.</p>
+    <div class="destination-status"><span class="destination-google" aria-hidden="true">G</span><span><small>PLACE ID</small><strong>{{ shop.place_id }}</strong></span><span class="destination-check" aria-label="Connected">✓</span></div>
+    <a class="dashboard-google-link" href="{{ url_for('google_review', public_token=shop.public_token) }}" target="_blank" rel="noopener">Open Google review page <span aria-hidden="true">↗</span></a>
+    <details class="place-id-editor">
+      <summary>Update Place ID</summary>
+      <form method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="action" value="update_place_id">
+        <label for="place-id">Google Place ID</label>
+        <input id="place-id" name="place_id" required maxlength="255" value="{{ shop.place_id }}" placeholder="e.g. ChIJ...">
+        <button class="primary" type="submit">Save Place ID</button>
+      </form>
+    </details>
+    <div class="destination-note"><span aria-hidden="true">✦</span><p>Customers are in control. Their review and rating are written and submitted by them on Google.</p></div>
+  </article>
+</section>
+
+<section class="template-library">
+  <div class="template-library-heading">
+    <div>
+      <p class="eyebrow">LOCAL CLASSROOM DEMO</p>
+      <h2>Review text library</h2>
+      <p class="muted">Add sample text to demonstrate choosing a review and rating. This flow stays inside the app and never sends text to Google.</p>
+    </div>
+    <a class="button secondary demo-preview-button" href="{{ demo_url }}" target="_blank" rel="noopener">Preview local demo <span aria-hidden="true">↗</span></a>
+  </div>
+  <div class="template-library-grid">
+    <form class="template-add-card" method="post">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-      <label>Review text<textarea name="review_text" rows="4" maxlength="1000" required placeholder="Add a sample review for the demo"></textarea></label>
-      <button class="primary" type="submit">Add demo text</button>
+      <input type="hidden" name="action" value="add_review">
+      <label for="review-text">Add a sample review</label>
+      <textarea id="review-text" name="review_text" rows="4" maxlength="1000" required placeholder="Write example text for the classroom demo"></textarea>
+      <div class="template-add-footer"><span>Up to 1,000 characters · Local demo only</span><button class="primary" type="submit">Add to library <span aria-hidden="true">＋</span></button></div>
     </form>
-  </section>
-</div>
-<section class="panel list-panel">
-  <div class="section-heading"><div><p class="eyebrow">YOUR SHOP</p><h2>Saved demo text</h2></div><span class="muted">{{ templates|length }} total</span></div>
-  {% if templates %}
-    <ul class="review-list">
-      {% for item in templates %}
-        <li><span>{{ item.text }}</span><span class="status {{ 'used' if item.used_at else '' }}">{{ 'Used' if item.used_at else 'Unused' }}</span></li>
-      {% endfor %}
-    </ul>
-  {% else %}
-    <p class="empty-state">No demo text yet. Add a few items to see the customer selection flow.</p>
-  {% endif %}
+    <div class="template-list-card">
+      <div class="template-list-heading"><div><h3>Saved sample text</h3><span>{{ unused_count }} available for demo</span></div><b>{{ templates|length }}</b></div>
+      {% if templates %}
+        <ul class="template-list">
+          {% for item in templates %}
+            <li><span class="template-list-dot {{ 'template-list-dot-used' if item.used_at else '' }}" aria-hidden="true"></span><span class="template-list-text">{{ item.text }}</span><span class="template-list-status {{ 'used' if item.used_at else '' }}">{{ 'Used' if item.used_at else 'Ready' }}</span></li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="template-empty">Your demo library is empty. Add a few examples to preview the selection flow.</p>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<section class="dashboard-how">
+  <div class="how-heading"><div><p class="eyebrow">READY WHEN YOU ARE</p><h2>Three little steps</h2></div><span class="muted">It’s that simple.</span></div>
+  <div class="how-grid">
+    <article class="how-card"><span class="how-number">01</span><span class="how-icon" aria-hidden="true">▦</span><h3>Share your QR</h3><p>Print it or keep it nearby. Customers scan with their phone camera.</p></article>
+    <article class="how-card"><span class="how-number">02</span><span class="how-icon" aria-hidden="true">♡</span><h3>Invite honest feedback</h3><p>They choose whether to continue and write in their own words.</p></article>
+    <article class="how-card"><span class="how-number">03</span><span class="how-icon" aria-hidden="true">↗</span><h3>They post on Google</h3><p>The Google page opens, and each customer submits their review directly.</p></article>
+  </div>
 </section>
 {% endblock %}
